@@ -34,4 +34,22 @@ export declare const requestData: ({ connection, route, method, body, headers: e
     body?: any;
     headers?: Record<string, string>;
 }) => Promise<any>;
+export declare const requestFileDownload: ({ connection, route, headers: extraHeaders, signal }: {
+    connection: string;
+    route: string;
+    headers?: Record<string, string>;
+    signal?: AbortSignal;
+}) => Promise<{
+    blob: Blob;
+    status: number;
+    contentType: string;
+}>;
+export declare const saveBlobAsFile: ({ blob, filename, contentType, }: {
+    blob: Blob;
+    filename: string;
+    contentType: string;
+}) => Promise<{
+    success: boolean;
+    message: string;
+}>;
 export {};
