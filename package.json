@@ -1,6 +1,6 @@
 {
   "name": "react-global-fetch-api",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A lightweight React global fetch client with state management and hooks",
   "main": "dist/FetchStore.js",
   "types": "dist/FetchStore.d.ts",
@@ -24,7 +24,7 @@
     "type": "git",
     "url": "https://github.com/beeplaced/react-global-fetch-api.git"
   },
-  "homepage": "https://github.com/beeplaced/react-fetch-api#readme",
+  "homepage": "https://github.com/beeplaced/react-global-fetch-api#readme",
   "peerDependencies": {
     "react": "^18.3.1"
   },

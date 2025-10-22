@@ -111,70 +111,54 @@ export const setFetchClient = (config: FetchClientConfig) => {
     setStateStore(client, connection);
 };
 
-export const requestData = async <T = any>({
-    connection,
-    route,
-    method = "POST",
-    body,
-    headers: extraHeaders = {},
+export const requestData = async({
+  connection,
+  route,
+  method = "POST",
+  body,
+  headers: extraHeaders = {},
 }: {
-    connection: string;
-    route: string;
-    method?: string;
-    body?: any;
-    headers?: object;
-}): Promise<RequestResult> => {
-    const client = getFetchClient(connection);
-    if (!client?.baseURL) {
-        return {
-            data: null,
-            status: 0,
-            error: new Error(`FetchClient for connection "${connection}" is not initialized or has no baseURL`),
-        };
+  connection: string;
+  route: string;
+  method?: string;
+  body?: any;
+  headers?: Record<string, string>;
+}): Promise<any> => {
+  const client = getFetchClient(connection);
+
+  if (!client?.baseURL) {
+    throw new Error(`FetchClient "${connection}" not initialized or has no baseURL`);
+  }
+
+  const url = `${client.baseURL}/${route}`;
+  const options: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...client.defaultHeaders,
+      ...extraHeaders,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  };
+
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.status}): ${text}`);
+  }
+
+  // Parse JSON if content exists, otherwise return null
+  try {
+    const contentType = response.headers.get("Content-Type") || "";
+    if (contentType.includes("application/json")) {
+      return (await response.json());
     }
-    const url = `${client.baseURL}/${route}`;
-    try {
-        const options: RequestInit = {
-            method,
-            headers: {
-                "Content-Type": "application/json",
-                ...client.defaultHeaders,
-                ...extraHeaders,
-            }
-        };
-        if (body) options.body = JSON.stringify(body);
-
-        const response = await fetch(url, options);
-
-        // Validate response before parsing JSON
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            return {
-                data: null,
-                status: response.status,
-                message: HttpErrorCodes[response.status],
-                error: errorData || new Error(`HTTP error! Status: ${response.status}`),
-            };
-        }
-
-        // Only parse JSON if the response is OK and has content
-        const data = await response.json().catch(() => null);
-        return {
-            data,
-            status: response.status,
-            message: HttpStatusCodes[response.status],
-        };
-    } catch (error: any) {
-        console.warn(`Request failed for ${method} ${url}`, error);
-        const status = error.name === "AbortError" ? 0 : 500;
-        return {
-            data: null,
-            status,
-            error: error instanceof Error ? error : new Error(String(error)),
-        };
-    }
+    return null;
+  } catch (err) {
+    throw new Error(`Failed to parse JSON response: ${(err as Error).message}`);
+  }
 };
-
 const getFetchClient = (connection = "client"): FetchClient => {
     if (!state[connection]) throw new Error(`FetchClient "${connection}" not initialized.`);
     return state[connection] as FetchClient;
