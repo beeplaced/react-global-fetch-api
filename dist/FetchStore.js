@@ -112,9 +112,11 @@ export const requestData = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
     try {
         const contentType = response.headers.get("Content-Type") || "";
         if (contentType.includes("application/json")) {
-            return (yield response.json());
+            const data = yield response.json();
+            return { data, status: response.status };
         }
-        return null;
+        const text = yield response.text();
+        return { data: text, status: response.status };
     }
     catch (err) {
         throw new Error(`Failed to parse JSON response: ${err.message}`);
