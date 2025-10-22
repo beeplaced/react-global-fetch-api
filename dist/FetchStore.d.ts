@@ -27,11 +27,11 @@ export declare const removeStateStore: (...keys: string[]) => void;
 export declare const subscribeKey: (key: string, listener: () => void) => (() => void);
 export declare const useStateStore: (key: string) => readonly [number | FetchClient | undefined, (v: any) => void, (...keys: string[]) => void];
 export declare const setFetchClient: (config: FetchClientConfig) => void;
-export declare const requestData: <T = any>({ connection, route, method, body, headers: extraHeaders, }: {
+export declare const requestData: ({ connection, route, method, body, headers: extraHeaders, }: {
     connection: string;
     route: string;
     method?: string;
     body?: any;
-    headers?: object;
-}) => Promise<RequestResult>;
+    headers?: Record<string, string>;
+}) => Promise<any>;
 export {};
