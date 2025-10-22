@@ -103,6 +103,47 @@ const Example = () => { //example Route
 export default Example;
 
 ```
+
+# requestData Function
+## Function Signature
+
+```ts
+const requestData = async ({
+  connection,
+  route,
+  method = "POST",
+  body,
+  headers: extraHeaders = {},
+}: {
+  connection: string;
+  route: string;
+  method?: string;
+  body?: any;
+  headers?: Record<string, string>;
+}): Promise<{ data: any; status: number }>;
+
+```
+
+## Parameters
+
+| Name         | Type                     | Required | Description                                                                                            |
+| ------------ | ------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
+| `connection` | `string`                 | ✅        | The name or key of the `FetchClient` configuration. Used to retrieve the base URL and default headers. |
+| `route`      | `string`                 | ✅        | The API route or endpoint to call (appended to the client’s base URL).                                 |
+| `method`     | `string`                 | ❌        | HTTP method to use (default: `"POST"`).                                                                |
+| `body`       | `any`                    | ❌        | The request payload (automatically JSON-stringified if provided).                                      |
+| `headers`    | `Record<string, string>` | ❌        | Additional headers to merge with default client headers.                                               |
+
+## returns
+
+```ts
+{
+  data: any;
+  status: number;
+}
+```
+
+
 ----
 # Changelog
 
@@ -110,5 +151,5 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-<!-- ## [1.0.3] - 2025-10-22
-### Fixed
+## [0.1.2] - 2025-10-22
+### Fixed json return
