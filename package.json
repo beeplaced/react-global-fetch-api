@@ -1,6 +1,6 @@
 {
   "name": "react-global-fetch-api",
-  "version": "0.1.2.1",
+  "version": "0.1.3",
   "description": "A lightweight React global fetch client with state management and hooks",
   "main": "dist/FetchStore.js",
   "types": "dist/FetchStore.d.ts",
