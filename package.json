@@ -18,11 +18,11 @@
     "typescript",
     "minimal"
   ],
-  "author": "Your Name",
+  "author": "beeplaced",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/beeplaced/react-fetch-api.git"
+    "url": "https://github.com/beeplaced/react-global-fetch-api.git"
   },
   "homepage": "https://github.com/beeplaced/react-fetch-api#readme",
   "peerDependencies": {
