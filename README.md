@@ -204,7 +204,10 @@ await saveBlobAsFile({
 All notable changes to this project will be documented in this file.
 
 ---
+
+## [1.0.1] - 2025-10-30
+- added Unauthorized (401) — redirecting to origin... to requestData and requestFileDownload
 ## [1.0.0] - 2025-10-22
-### added Download Reports or images and docu
+- added Download Reports or images and docu
 ## [0.1.2] - 2025-10-22
-### Fixed json return
+- Fixed json return

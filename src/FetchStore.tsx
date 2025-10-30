@@ -155,6 +155,13 @@ export const requestData = async ({
 
   const response = await fetch(url, options);
 
+  // --- 1️⃣ Handle Unauthorized (401) ---
+  if (response.status === 401) {
+    console.warn("Unauthorized (401) — redirecting to origin...");
+    window.location.href = window.location.origin;
+    return; // Stop execution here
+  }
+
   if (!response.ok) {
     const text = await response.text().catch(() => "");
     throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.status}): ${text}`);
@@ -184,7 +191,7 @@ export const requestFileDownload = async ({
   route: string;
   headers?: Record<string, string>;
   signal?: AbortSignal;
-}): Promise<{ blob: Blob; status: number; contentType: string }> => {
+}): Promise<{ blob: Blob; status: number; contentType: string } | void> => {
   try {
     const client = getFetchClient(connection);
     if (!client?.baseURL) {
@@ -202,6 +209,13 @@ export const requestFileDownload = async ({
     };
 
     const response = await fetch(url, options);
+
+    // --- 1️⃣ Handle Unauthorized (401) ---
+    if (response.status === 401) {
+      console.warn("Unauthorized (401) — redirecting to origin...");
+      window.location.href = window.location.origin;
+      return; // Stop execution here
+    }
 
     if (!response.ok) {
       const text = await response.text().catch(() => "");
