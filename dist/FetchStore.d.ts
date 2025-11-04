@@ -9,12 +9,14 @@ export declare const HttpErrorCodes: Record<number, string>;
 export interface FetchClientConfig {
     baseURL?: string;
     headers?: Record<string, string>;
+    redirect?: boolean;
     connection?: string;
 }
 export declare class FetchClient {
     baseURL: string;
     defaultHeaders: Record<string, string>;
-    constructor({ baseURL, headers }?: FetchClientConfig);
+    redirect: boolean;
+    constructor({ baseURL, headers, redirect }?: FetchClientConfig);
 }
 interface State {
     [key: string]: FetchClient | number | undefined;
@@ -27,13 +29,12 @@ export declare const removeStateStore: (...keys: string[]) => void;
 export declare const subscribeKey: (key: string, listener: () => void) => (() => void);
 export declare const useStateStore: (key: string) => readonly [number | FetchClient | undefined, (v: any) => void, (...keys: string[]) => void];
 export declare const setFetchClient: (config: FetchClientConfig) => void;
-export declare const requestData: ({ connection, route, method, body, headers: extraHeaders, redirect, credentials }: {
+export declare const requestData: ({ connection, route, method, body, headers: extraHeaders, credentials }: {
     connection: string;
     route: string;
     method?: string;
     body?: any;
     headers?: Record<string, string>;
-    redirect?: boolean;
     credentials?: RequestCredentials;
 }) => Promise<any>;
 export declare const requestFileDownload: ({ connection, route, headers: extraHeaders, signal }: {

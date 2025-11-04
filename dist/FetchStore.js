@@ -53,9 +53,10 @@ const mimeToExtension = {
 };
 ;
 export class FetchClient {
-    constructor({ baseURL = "", headers = {} } = {}) {
+    constructor({ baseURL = "", headers = {}, redirect = false } = {}) {
         this.baseURL = baseURL;
         this.defaultHeaders = headers;
+        this.redirect = redirect;
     }
 }
 ;
@@ -109,7 +110,7 @@ export const setFetchClient = (config) => {
     const client = new FetchClient(rest);
     setStateStore(client, connection);
 };
-export const requestData = (_a) => __awaiter(void 0, [_a], void 0, function* ({ connection, route, method = "POST", body, headers: extraHeaders = {}, redirect = false, credentials = undefined }) {
+export const requestData = (_a) => __awaiter(void 0, [_a], void 0, function* ({ connection, route, method = "POST", body, headers: extraHeaders = {}, credentials = undefined }) {
     const client = getFetchClient(connection);
     if (!(client === null || client === void 0 ? void 0 : client.baseURL)) {
         throw new Error(`FetchClient "${connection}" not initialized or has no baseURL`);
@@ -132,13 +133,13 @@ export const requestData = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
                 return { data: { msg: `success on ${method}` }, status: response.status };
             case response.status === 302 || response.type === "opaqueredirect": {
                 console.warn("Redirect (302) detected");
-                if (redirect)
+                if (client.redirect)
                     window.location.href = window.location.origin;
                 return { status: 302, error: "Redirected to login" };
             }
             case response.status === 401: {
                 console.warn("Unauthorized (401)");
-                if (redirect)
+                if (client.redirect)
                     window.location.href = window.location.origin;
                 return { status: 401, error: "Unauthorized" };
             }
@@ -154,7 +155,7 @@ export const requestData = (_a) => __awaiter(void 0, [_a], void 0, function* ({ 
                     }
                     if (text.toLowerCase().includes("<!doctype html") || text.toLowerCase().includes("<html")) {
                         console.warn("Got HTML instead of JSON — likely login redirect.");
-                        if (redirect)
+                        if (client.redirect)
                             window.location.href = window.location.origin;
                         return { status: response.status, error: "HTML redirect" };
                     }
