@@ -45,16 +45,19 @@ const mimeToExtension: Record<string, string> = {
 export interface FetchClientConfig {
   baseURL?: string;
   headers?: Record<string, string>;
+  redirect?: boolean;
   connection?: string; // optional key for multiple connections
 };
 
 export class FetchClient {
   baseURL: string;
   defaultHeaders: Record<string, string>;
+  redirect: boolean;
 
-  constructor({ baseURL = "", headers = {} }: FetchClientConfig = {}) {
+  constructor({ baseURL = "", headers = {}, redirect = false }: FetchClientConfig = {}) {
     this.baseURL = baseURL;
     this.defaultHeaders = headers;
+    this.redirect = redirect
   }
 };
 
@@ -131,7 +134,6 @@ export const requestData = async ({
   method = "POST",
   body,
   headers: extraHeaders = {},
-  redirect = false,
   credentials = undefined
 }: {
   connection: string;
@@ -139,11 +141,10 @@ export const requestData = async ({
   method?: string;
   body?: any;
   headers?: Record<string, string>;
-  redirect?: boolean;
   credentials?: RequestCredentials;
 }): Promise<any> => {
 
-    const client = getFetchClient(connection);
+  const client = getFetchClient(connection);
 
   if (!client?.baseURL) {
     throw new Error(`FetchClient "${connection}" not initialized or has no baseURL`);
@@ -158,7 +159,7 @@ export const requestData = async ({
       ...extraHeaders,
     },
     ...(body !== undefined && { body: JSON.stringify(body) }),
-    ...(credentials !== undefined && { credentials }), 
+    ...(credentials !== undefined && { credentials }),
   };
 
   try {
@@ -177,17 +178,17 @@ export const requestData = async ({
       }
 
       case response.status === 204: //Delete, PATCH, PUT
-        return { data: { msg: `success on ${method}`}, status: response.status };
+        return { data: { msg: `success on ${method}` }, status: response.status };
 
       case response.status === 302 || response.type === "opaqueredirect": {
         console.warn("Redirect (302) detected");
-        if (redirect) window.location.href = window.location.origin;
+        if (client.redirect) window.location.href = window.location.origin;
         return { status: 302, error: "Redirected to login" };
       }
 
       case response.status === 401: {
         console.warn("Unauthorized (401)");
-        if (redirect) window.location.href = window.location.origin;
+        if (client.redirect) window.location.href = window.location.origin;
         return { status: 401, error: "Unauthorized" };
       }
 
@@ -203,7 +204,7 @@ export const requestData = async ({
 
           if (text.toLowerCase().includes("<!doctype html") || text.toLowerCase().includes("<html")) {
             console.warn("Got HTML instead of JSON — likely login redirect.");
-            if (redirect) window.location.href = window.location.origin;
+            if (client.redirect) window.location.href = window.location.origin;
             return { status: response.status, error: "HTML redirect" };
           }
 
