@@ -204,6 +204,8 @@ await saveBlobAsFile({
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.1.2] - 2025-11-04
+- rebuild
 ## [1.1.1] - 2025-11-04
 - redirect added via instructor globally (def: false)
 ## [1.1.0] - 2025-11-04
