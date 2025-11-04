@@ -204,6 +204,11 @@ await saveBlobAsFile({
 All notable changes to this project will be documented in this file.
 
 ---
+## [1.1.0] - 2025-11-04
+- rebuild error handling, added 
+- redirect?: boolean; - redirect window.location.origin if true, (def: false)
+  - redirect on 302, 405 or "doctype..." response
+- credentials?: RequestCredentials (def: undefined)
 
 ## [1.0.1] - 2025-10-30
 - added Unauthorized (401) — redirecting to origin... to requestData and requestFileDownload

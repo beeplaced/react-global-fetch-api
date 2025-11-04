@@ -5,13 +5,15 @@ export interface RequestResult {
   status: number;
   message?: string;
   error?: any; // can be a fetch error or thrown error
-}
+};
 
 export const HttpStatusCodes: Record<number, string> = {
   200: "OK",
   201: "Created",
   202: "Accepted",
-  204: "No Content",
+  203: "Non-Authoritative Information",
+  204: "No Content", //Delete, PATCH, PUT
+  // 205: "Reset Content"
 };
 
 export const HttpErrorCodes: Record<number, string> = {
@@ -44,7 +46,7 @@ export interface FetchClientConfig {
   baseURL?: string;
   headers?: Record<string, string>;
   connection?: string; // optional key for multiple connections
-}
+};
 
 export class FetchClient {
   baseURL: string;
@@ -54,13 +56,13 @@ export class FetchClient {
     this.baseURL = baseURL;
     this.defaultHeaders = headers;
   }
-}
+};
 
 interface State {
   [key: string]: FetchClient | number | undefined;
   client?: FetchClient;
   updatedAt?: number;
-}
+};
 
 // Global state management
 let state: State = {};
@@ -115,7 +117,7 @@ export const useStateStore = (key: string) => {
   }, [key]);
 
   return [value, (v: any) => setStateStore(v, key), removeStateStore] as const;
-}
+};
 
 export const setFetchClient = (config: FetchClientConfig) => {
   const { connection = "client", ...rest } = config;
@@ -129,55 +131,89 @@ export const requestData = async ({
   method = "POST",
   body,
   headers: extraHeaders = {},
+  redirect = false,
+  credentials = undefined
 }: {
   connection: string;
   route: string;
   method?: string;
   body?: any;
   headers?: Record<string, string>;
+  redirect?: boolean;
+  credentials?: RequestCredentials;
 }): Promise<any> => {
-  const client = getFetchClient(connection);
+
+    const client = getFetchClient(connection);
 
   if (!client?.baseURL) {
     throw new Error(`FetchClient "${connection}" not initialized or has no baseURL`);
   }
 
   const url = `${client.baseURL}/${route}`;
+
   const options: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...client.defaultHeaders,
       ...extraHeaders,
     },
-    body: body ? JSON.stringify(body) : undefined,
+    ...(body !== undefined && { body: JSON.stringify(body) }),
+    ...(credentials !== undefined && { credentials }), 
   };
 
-  const response = await fetch(url, options);
-
-  // --- 1️⃣ Handle Unauthorized (401) ---
-  if (response.status === 401) {
-    console.warn("Unauthorized (401) — redirecting to origin...");
-    window.location.href = window.location.origin;
-    return; // Stop execution here
-  }
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.status}): ${text}`);
-  }
-
-  // Parse JSON if content exists, otherwise return null
   try {
-    const contentType = response.headers.get("Content-Type") || "";
-    if (contentType.includes("application/json")) {
-      const data = await response.json();
-      return { data, status: response.status };
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.status}): ${text}`);
     }
-    const text = await response.text();
-    return { data: text, status: response.status };
-  } catch (err) {
-    throw new Error(`Failed to parse JSON response: ${(err as Error).message}`);
+
+    const contentType = response.headers.get("content-type") || "";
+    switch (true) {
+      case [200, 201, 202, 203].indexOf(response.status) !== -1 && contentType.includes("application/json"): {
+        const data = await response.json();
+        return { data, status: response.status };
+      }
+
+      case response.status === 204: //Delete, PATCH, PUT
+        return { data: { msg: `success on ${method}`}, status: response.status };
+
+      case response.status === 302 || response.type === "opaqueredirect": {
+        console.warn("Redirect (302) detected");
+        if (redirect) window.location.href = window.location.origin;
+        return { status: 302, error: "Redirected to login" };
+      }
+
+      case response.status === 401: {
+        console.warn("Unauthorized (401)");
+        if (redirect) window.location.href = window.location.origin;
+        return { status: 401, error: "Unauthorized" };
+      }
+
+      default: {
+        if (!contentType.includes("application/json")) {
+          let text = "";
+          try {
+            text = await response.text();
+          } catch (err) {
+            console.warn("Could not read response text:", err);
+            return { status: response.status, error: "Failed to read response body" };
+          }
+
+          if (text.toLowerCase().includes("<!doctype html") || text.toLowerCase().includes("<html")) {
+            console.warn("Got HTML instead of JSON — likely login redirect.");
+            if (redirect) window.location.href = window.location.origin;
+            return { status: response.status, error: "HTML redirect" };
+          }
+
+          return { status: response.status, error: "Unexpected content type" };
+        }
+        throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.statusText})`);
+      }
+    }
+  } catch (error: any) {
+    throw new Error(`Failed to parse JSON response: ${(error as Error).message}`);
   }
 };
 

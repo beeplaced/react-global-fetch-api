@@ -19,11 +19,14 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 import { useState, useEffect } from "react";
+;
 export const HttpStatusCodes = {
     200: "OK",
     201: "Created",
     202: "Accepted",
-    204: "No Content",
+    203: "Non-Authoritative Information",
+    204: "No Content", //Delete, PATCH, PUT
+    // 205: "Reset Content"
 };
 export const HttpErrorCodes = {
     400: "Bad Request",
@@ -48,12 +51,15 @@ const mimeToExtension = {
     "application/zip": "zip",
     "application/json": "json",
 };
+;
 export class FetchClient {
     constructor({ baseURL = "", headers = {} } = {}) {
         this.baseURL = baseURL;
         this.defaultHeaders = headers;
     }
 }
+;
+;
 // Global state management
 let state = {};
 const listeners = new Map();
@@ -103,34 +109,63 @@ export const setFetchClient = (config) => {
     const client = new FetchClient(rest);
     setStateStore(client, connection);
 };
-export const requestData = (_a) => __awaiter(void 0, [_a], void 0, function* ({ connection, route, method = "POST", body, headers: extraHeaders = {}, }) {
+export const requestData = (_a) => __awaiter(void 0, [_a], void 0, function* ({ connection, route, method = "POST", body, headers: extraHeaders = {}, redirect = false, credentials = undefined }) {
     const client = getFetchClient(connection);
     if (!(client === null || client === void 0 ? void 0 : client.baseURL)) {
         throw new Error(`FetchClient "${connection}" not initialized or has no baseURL`);
     }
     const url = `${client.baseURL}/${route}`;
-    const options = {
-        method,
-        headers: Object.assign(Object.assign({ "Content-Type": "application/json" }, client.defaultHeaders), extraHeaders),
-        body: body ? JSON.stringify(body) : undefined,
-    };
-    const response = yield fetch(url, options);
-    if (!response.ok) {
-        const text = yield response.text().catch(() => "");
-        throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.status}): ${text}`);
-    }
-    // Parse JSON if content exists, otherwise return null
+    const options = Object.assign(Object.assign({ method, headers: Object.assign({ "Content-Type": "application/json" }, extraHeaders) }, (body !== undefined && { body: JSON.stringify(body) })), (credentials !== undefined && { credentials }));
     try {
-        const contentType = response.headers.get("Content-Type") || "";
-        if (contentType.includes("application/json")) {
-            const data = yield response.json();
-            return { data, status: response.status };
+        const response = yield fetch(url, options);
+        if (!response.ok) {
+            const text = yield response.text().catch(() => "");
+            throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.status}): ${text}`);
         }
-        const text = yield response.text();
-        return { data: text, status: response.status };
+        const contentType = response.headers.get("content-type") || "";
+        switch (true) {
+            case [200, 201, 202, 203].indexOf(response.status) !== -1 && contentType.includes("application/json"): {
+                const data = yield response.json();
+                return { data, status: response.status };
+            }
+            case response.status === 204: //Delete, PATCH, PUT
+                return { data: { msg: `success on ${method}` }, status: response.status };
+            case response.status === 302 || response.type === "opaqueredirect": {
+                console.warn("Redirect (302) detected");
+                if (redirect)
+                    window.location.href = window.location.origin;
+                return { status: 302, error: "Redirected to login" };
+            }
+            case response.status === 401: {
+                console.warn("Unauthorized (401)");
+                if (redirect)
+                    window.location.href = window.location.origin;
+                return { status: 401, error: "Unauthorized" };
+            }
+            default: {
+                if (!contentType.includes("application/json")) {
+                    let text = "";
+                    try {
+                        text = yield response.text();
+                    }
+                    catch (err) {
+                        console.warn("Could not read response text:", err);
+                        return { status: response.status, error: "Failed to read response body" };
+                    }
+                    if (text.toLowerCase().includes("<!doctype html") || text.toLowerCase().includes("<html")) {
+                        console.warn("Got HTML instead of JSON — likely login redirect.");
+                        if (redirect)
+                            window.location.href = window.location.origin;
+                        return { status: response.status, error: "HTML redirect" };
+                    }
+                    return { status: response.status, error: "Unexpected content type" };
+                }
+                throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.statusText})`);
+            }
+        }
     }
-    catch (err) {
-        throw new Error(`Failed to parse JSON response: ${err.message}`);
+    catch (error) {
+        throw new Error(`Failed to parse JSON response: ${error.message}`);
     }
 });
 export const requestFileDownload = (_a) => __awaiter(void 0, [_a], void 0, function* ({ connection, route, headers: extraHeaders = {}, signal }) {
@@ -146,6 +181,12 @@ export const requestFileDownload = (_a) => __awaiter(void 0, [_a], void 0, funct
             signal
         };
         const response = yield fetch(url, options);
+        // --- 1️⃣ Handle Unauthorized (401) ---
+        if (response.status === 401) {
+            console.warn("Unauthorized (401) — redirecting to origin...");
+            window.location.href = window.location.origin;
+            return; // Stop execution here
+        }
         if (!response.ok) {
             const text = yield response.text().catch(() => "");
             throw new Error(`Download failed (${response.status}): ${text}`);
