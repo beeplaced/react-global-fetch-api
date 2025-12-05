@@ -213,11 +213,15 @@ export const requestData = async ({
           }
           return { status: response.status, error: "Unexpected content type" };
         }
-       throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.statusText})`);
+        console.warn('error default')
+        throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.statusText})`);
       }
     }
   } catch (error: any) {
-    throw new Error(`Failed to parse JSON response: ${(error as Error).message}`);
+    const err = new Error(`Failed to parse JSON response: ${error.message}`);
+    (err as any).status = error.status || null;        // numeric HTTP status if available
+    (err as any).messageText = error.body?.message || null; // server message if available
+    throw err;
   }
 };
 
