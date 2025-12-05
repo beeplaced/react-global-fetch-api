@@ -204,6 +204,9 @@ await saveBlobAsFile({
 All notable changes to this project will be documented in this file.
 
 ---
+
+## [1.1.4] - 2025-11-12
+- added return for response.status === 403: "No Permissions (403)"
 ## [1.1.3] - 2025-11-12
 - added tag to reload so service-worker can bypass instead of fetching from cache | ?reload=' + Date.now();
 ## [1.1.2] - 2025-11-04

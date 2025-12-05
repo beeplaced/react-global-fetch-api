@@ -192,6 +192,11 @@ export const requestData = async ({
         return { status: 401, error: "Unauthorized" };
       }
 
+      case response.status === 403: {
+        console.warn("No Permissions (403)");
+        return { status: 403, error: "No permissions" };
+      }
+
       default: {
         if (!contentType.includes("application/json")) {
           let text = "";
@@ -201,16 +206,14 @@ export const requestData = async ({
             console.warn("Could not read response text:", err);
             return { status: response.status, error: "Failed to read response body" };
           }
-
           if (text.toLowerCase().includes("<!doctype html") || text.toLowerCase().includes("<html")) {
             console.warn("Got HTML instead of JSON — likely login redirect.");
             if (client.redirect) window.location.href = window.location.origin + '?reload=' + Date.now();
             return { status: response.status, error: "HTML redirect" };
           }
-
           return { status: response.status, error: "Unexpected content type" };
         }
-        throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.statusText})`);
+       throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.statusText})`);
       }
     }
   } catch (error: any) {
