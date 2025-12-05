@@ -204,6 +204,10 @@ await saveBlobAsFile({
 All notable changes to this project will be documented in this file.
 
 ---
+
+
+## [1.1.8] - 2025-11-12
+- return !response.ok with status and message,no error thrown
 ## [1.1.6] - 2025-11-12
 - add error status and message at main catch block in requestData
 ## [1.1.4] - 2025-11-12

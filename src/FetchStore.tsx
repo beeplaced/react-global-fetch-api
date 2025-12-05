@@ -164,10 +164,15 @@ export const requestData = async ({
 
   try {
     const response = await fetch(url, options);
-
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
-      throw new Error(`${HttpErrorCodes[response.status] || "HTTP Error"} (${response.status}): ${text}`);
+      let message = "";
+      try {
+        const data = await response.json();
+        message = data.message || JSON.stringify(data);
+      } catch {
+        message = await response.text().catch(() => "");
+      }
+      return { status: response.status || 302, data: {}, error: message };
     }
 
     const contentType = response.headers.get("content-type") || "";
@@ -193,7 +198,6 @@ export const requestData = async ({
       }
 
       case response.status === 403: {
-        console.warn("No Permissions (403)");
         return { status: 403, error: "No permissions" };
       }
 
