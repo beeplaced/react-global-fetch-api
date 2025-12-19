@@ -205,7 +205,8 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-
+## [1.1.10] - 2025-11-19
+- Redirect to response.url on redirected = true from Server
 ## [1.1.8] - 2025-11-12
 - return !response.ok with status and message,no error thrown
 ## [1.1.6] - 2025-11-12

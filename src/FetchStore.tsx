@@ -164,6 +164,10 @@ export const requestData = async ({
 
   try {
     const response = await fetch(url, options);
+    if (response.redirected === true){
+      if (client.redirect) window.location.href = response.url
+      return
+    }
     if (!response.ok) {
       let message = "";
       try {
@@ -187,13 +191,13 @@ export const requestData = async ({
 
       case response.status === 302 || response.type === "opaqueredirect": {
         console.warn("Redirect (302) detected");
-        if (client.redirect) window.location.href = window.location.origin + '?reload=' + Date.now();
+       // if (client.redirect) window.location.href = window.location.origin + '?reload=' + Date.now();
         return { status: 302, error: "Redirected to login" };
       }
 
       case response.status === 401: {
         console.warn("Unauthorized (401)");
-        if (client.redirect) window.location.href = window.location.origin + '?reload=' + Date.now();
+       // if (client.redirect) window.location.href = window.location.origin + '?reload=' + Date.now();
         return { status: 401, error: "Unauthorized" };
       }
 
@@ -212,7 +216,7 @@ export const requestData = async ({
           }
           if (text.toLowerCase().includes("<!doctype html") || text.toLowerCase().includes("<html")) {
             console.warn("Got HTML instead of JSON — likely login redirect.");
-            if (client.redirect) window.location.href = window.location.origin + '?reload=' + Date.now();
+           // if (client.redirect) window.location.href = window.location.origin + '?reload=' + Date.now();
             return { status: response.status, error: "HTML redirect" };
           }
           return { status: response.status, error: "Unexpected content type" };
@@ -257,11 +261,15 @@ export const requestFileDownload = async ({
     };
 
     const response = await fetch(url, options);
+    if (response.redirected === true){
+      if (client.redirect) window.location.href = response.url
+      return
+    }
 
     // --- 1️⃣ Handle Unauthorized (401) ---
     if (response.status === 401) {
       console.warn("Unauthorized (401) — redirecting to origin...");
-      window.location.href = window.location.origin + '?reload=' + Date.now();
+      // window.location.href = window.location.origin + '?reload=' + Date.now();
       return; // Stop execution here
     }
 
